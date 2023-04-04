@@ -1,0 +1,41 @@
+[package]
+build = "build.rs"
+edition = "2021"
+name = "q_tts"
+description = "A simple TTS tool that reads from the clipboard."
+version = "0.9.0"
+
+[[bin]]
+name = "qTTS"
+path = "src/main.rs"
+
+[profile.release]
+lto = true
+
+[dependencies]
+anyhow = "1.0.70"
+clipboard-win = "4.5.0"
+configparser = "3.0.2"
+dirs = "5.0.0"
+fltk = {version = "^1.4", features = ["fltk-bundled"]}
+fltk-theme = "0.4"
+
+[dependencies.windows]
+version = "0.48.0"
+features = [
+  "Foundation",
+  "Foundation_Collections",
+  "Media_Core",
+  "Media_Playback",
+  "Media_SpeechSynthesis",
+  "Storage_Streams",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_System_LibraryLoader",
+  "Win32_Foundation",
+]
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+[build-dependencies]
+winresource = "0.1.15"
