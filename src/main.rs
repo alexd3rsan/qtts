@@ -313,10 +313,8 @@ fn init_speaker_chooser(
     chooser.set_tooltip("Voice selector");
     chooser.set_color(Color::White);
 
-    let mut index = 0;
-
     for label in labels {
-        chooser.add_choice(&label);
+        chooser.add_choice(label);
     }
 
     if let Some(index) = last_voice_index {
