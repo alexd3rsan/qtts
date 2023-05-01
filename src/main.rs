@@ -3,12 +3,14 @@
 mod config;
 mod tts;
 
+use std::{path::PathBuf, str::FromStr};
+
 use clipboard_win::{formats, get_clipboard};
 use config::{load_config, save_config, TtsConfig};
 use fltk::{
     app::{self, TimeoutHandle},
     button::{Button, ToggleButton},
-    enums::{Color, FrameType, Shortcut},
+    enums::{Color, Event, FrameType, Shortcut},
     frame::Frame,
     group::Pack,
     menu::Choice,
@@ -50,6 +52,7 @@ pub enum TTSCommand {
     PlaybackRateSet,
     SpeakerChanged,
     WordBoundaryAdvanced,
+    DraggedFile,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -109,6 +112,18 @@ fn main() -> anyhow::Result<()> {
     wind.end();
     wind.show();
 
+    wind.handle(move |_, e| match e {
+        Event::DndEnter => true,
+        Event::DndLeave => true,
+        Event::DndRelease => true,
+        Event::DndDrag => true,
+        Event::Paste => {
+            s.send(TTSCommand::DraggedFile);
+            true
+        }
+        _ => false,
+    });
+
     // must be called after wind.show() to work!
     init_icons(wind.raw_handle())?;
 
@@ -163,6 +178,41 @@ fn main() -> anyhow::Result<()> {
                         tts.pause().ok();
                         play_pause_btn.set_label(RESUME_STR)
                     }
+
+                    wind.redraw();
+                }
+
+                TTSCommand::DraggedFile => {
+                    let text: String = read_files_from_drop().unwrap_or_default();
+
+                    if text.is_empty() {
+                        continue;
+                    }
+
+                    let callback = move || {
+                        s.send(TTSCommand::WordBoundaryAdvanced);
+                    };
+                    if let Ok(words) = tts.speak(text, Some(callback)) {
+                        if words.is_empty() {
+                            continue;
+                        }
+
+                        word_cnt = 0;
+                        play_pause_btn.set(true);
+                        reached_end = false;
+
+                        word_vec.clear();
+                        word_vec = words;
+
+                        let label = word_vec.get(0).map(|s| s.as_str()).unwrap_or("");
+                        word_display.set_label(label);
+
+                        wind.redraw();
+                    }
+
+                    stop_btn.activate();
+                    play_pause_btn.set_label(PAUSE_STR);
+                    speaker_chooser.deactivate();
                 }
                 TTSCommand::SpeakerChanged => {
                     if let Some(sp) = speakers.get(speaker_chooser.value() as usize) {
@@ -218,6 +268,25 @@ fn main() -> anyhow::Result<()> {
     save_config(config).ok();
 
     Ok(())
+}
+
+fn read_files_from_drop() -> anyhow::Result<String> {
+    const MAX_FILE_LEN: u64 = 10_485_760; // 10 MiB limit per file seems reasonable
+
+    let text = app::event_text();
+
+    use std::fs::*;
+
+    let file_contents: Vec<String> = text
+        .split('\n')
+        .filter_map(|s| PathBuf::from_str(s).ok())
+        .filter(|p| metadata(p).map_or(false, |m| m.is_file() && m.len() < MAX_FILE_LEN))
+        .filter_map(|p| read_to_string(p).ok())
+        .collect();
+
+    let content = file_contents.join("\n\n\n");
+
+    Ok(content)
 }
 
 /**

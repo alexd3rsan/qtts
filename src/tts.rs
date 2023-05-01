@@ -61,6 +61,9 @@ impl Tts {
         text: String,
         callback_word_boundary: Option<impl Fn() + Send + Sync + 'static>,
     ) -> anyhow::Result<Vec<String>> {
+
+        self.stop()?;
+
         let stream = self
             .synth
             .SynthesizeTextToStreamAsync(&text.into())?

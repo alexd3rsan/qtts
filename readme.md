@@ -1,6 +1,6 @@
 # <img src="qtts.png" width="22"/> Quick Text-To-Speech
 
-A simple TTS tool for Windows that reads directly from the clipboard.
+A simple TTS tool for Windows that reads directly from the clipboard or from textfiles that are dragged into the window.
 
 ## Screenshot:
 

@@ -1,9 +1,9 @@
 [package]
 build = "build.rs"
 edition = "2021"
-name = "q_tts"
-description = "A simple TTS tool that reads from the clipboard."
-version = "0.9.0"
+name = "q_tts" 
+description = "A simple TTS tool for Windows that reads directly from the clipboard or from textfiles that are dragged into the window."
+version = "0.10.0"
 
 [[bin]]
 name = "qTTS"
